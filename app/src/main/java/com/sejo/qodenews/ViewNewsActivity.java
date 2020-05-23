@@ -2,6 +2,7 @@ package com.sejo.qodenews;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -47,10 +48,21 @@ public class ViewNewsActivity extends AppCompatActivity {
         String description = intent.getStringExtra("DESCRIPTION");
         String imageUrl = intent.getStringExtra("IMAGE");
 
+        boolean hasImage = checkImageAvailabilty(imageUrl);
+
         //Set the views with retrieved info
-        Picasso.get().load(imageUrl).fit().centerInside().into(newsImg);
+        if (hasImage){
+            Picasso.get().load(imageUrl).fit().centerInside().into(newsImg);
+        }else{
+            newsImg.setVisibility(View.GONE);
+        }
         newsTitle.setText(title);
         newsAuthor.setText(author);
         newsDescription.setText(description);
+    }
+
+    //Checks if there is a url for image
+    private boolean checkImageAvailabilty(String imageURL){
+        return !imageURL.isEmpty();
     }
 }
