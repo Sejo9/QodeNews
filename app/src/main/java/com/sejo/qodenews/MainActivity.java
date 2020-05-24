@@ -1,8 +1,14 @@
 package com.sejo.qodenews;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -23,13 +29,15 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     //Variables
     private RecyclerView newsRecycler;
     private NewsRecyclerAdapter adapter;
     private ArrayList<NewsItem> newsItems;
     private RequestQueue requestQueue;
+    private ProgressBar pb;
+    private LinearLayout retryLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +46,13 @@ public class MainActivity extends AppCompatActivity {
 
         init();
 
-        retrieveNews();
+        if(checkConnection()){
+            retrieveNews();
+        }else{
+            pb.setVisibility(View.GONE);
+            retryLayout.setVisibility(View.VISIBLE);
+        }
+
     }
 
 
@@ -46,12 +60,23 @@ public class MainActivity extends AppCompatActivity {
     private void init(){
         newsItems = new ArrayList<>();
 
+        pb = findViewById(R.id.pb);
+        retryLayout = findViewById(R.id.retry_layout);
+        Button retry = findViewById(R.id.retry);
+        retry.setOnClickListener(this);
+
         newsRecycler = findViewById(R.id.newsRecycler);
         newsRecycler.setLayoutManager(new LinearLayoutManager(this));
 
         requestQueue = Volley.newRequestQueue(this);
     }
 
+    private boolean checkConnection(){
+        ConnectivityManager cm = (ConnectivityManager) MainActivity.this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+
+        return networkInfo != null;
+    }
 
     //Parsing JSON file to retrieve data to populate recycler view
     private void retrieveNews() {
@@ -83,6 +108,9 @@ public class MainActivity extends AppCompatActivity {
                     adapter = new NewsRecyclerAdapter(MainActivity.this, newsItems);
                     newsRecycler.setAdapter(adapter);
 
+                    pb.setVisibility(View.GONE);
+                    newsRecycler.setVisibility(View.VISIBLE);
+
                     //When a news item is clicked
                     adapter.setOnNewsItemClickListener(new NewsRecyclerAdapter.OnNewsItemClickListener() {
                         @Override
@@ -109,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(MainActivity.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                error.printStackTrace();
             }
         });
 
@@ -117,4 +145,14 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
+    @Override
+    public void onClick(View view) {
+        if (view.getId() == R.id.retry){
+            if (checkConnection()){
+                pb.setVisibility(View.VISIBLE);
+                retryLayout.setVisibility(View.GONE);
+                retrieveNews();
+            }
+        }
+    }
 }
